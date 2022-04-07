@@ -49,6 +49,7 @@ async function runerw() {
         const footballCollection = database.collection('football');
         const cricketCollection = database.collection('cricket');
         const otherCollection = database.collection('other');
+        const userCollection = database.collection('users');
 
 
 
@@ -84,6 +85,26 @@ async function runerw() {
             res.send(getother);
           
           })
+
+
+          // user post data 
+
+
+    app.post('/users', async(req , res) =>{
+      const user = req.body
+      const result = await userCollection.insertOne(user)
+      console.log(result)
+      res.json(result)
+  })
+
+  app.put('/users', async (req, res) => {
+      const user = req.body;
+      // const filter = {email: user.email};
+      const options = { upsert: true };
+      const updateDoc = {$set: user};
+      const result = await userCollection.updateOne( updateDoc, options)
+      res.json(result) 
+  })
 
           
 
