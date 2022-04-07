@@ -98,12 +98,12 @@ async function runerw() {
   })
 
   app.put('/users', async (req, res) => {
-      const user = req.body;
-      // const filter = {email: user.email};
-      const options = { upsert: true };
-      const updateDoc = {$set: user};
-      const result = await userCollection.updateOne( updateDoc, options)
-      res.json(result) 
+    const user = req.body;
+    const filter = {email: user.email};
+    const options = { upsert: true };
+    const updateDoc = {$set: user};
+    const result = await userCollection.updateOne( filter, updateDoc, options)
+    res.json(result) 
   })
 
           
