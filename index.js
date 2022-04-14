@@ -50,6 +50,8 @@ async function runerw() {
         const cricketCollection = database.collection('cricket');
         const otherCollection = database.collection('other');
         const userCollection = database.collection('users');
+        const cricketplayersCollection = database.collection('cricketplayers');
+        const hockeyPuckPlayersCollection = database.collection('hockeyPuckPlayers');
 
 
 
@@ -86,6 +88,23 @@ async function runerw() {
           
           })
 
+
+
+          app.get('/cricketplayers', async(req , res) => {
+            const cursor = cricketplayersCollection.find({});
+            const getcricketr = await cursor.toArray();
+            res.send(getcricketr);
+          
+          })
+
+
+
+          app.get('/hockeyPuckPlayers', async(req , res) => {
+            const cursor = hockeyPuckPlayersCollection.find({});
+            const gethockey = await cursor.toArray();
+            res.send(gethockey);
+          
+          })
 
           // user post data 
 
