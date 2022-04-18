@@ -52,7 +52,8 @@ async function runerw() {
         const userCollection = database.collection('users');
         const cricketplayersCollection = database.collection('cricketplayers');
         const hockeyPuckPlayersCollection = database.collection('hockeyPuckPlayers');
-
+        
+        const playersReviewCollection = database.collection('review');
 
 
         app.get('/players', async(req , res) => {
@@ -106,6 +107,8 @@ async function runerw() {
           
           })
 
+
+          
           // user post data 
 
 
@@ -124,8 +127,37 @@ async function runerw() {
     const result = await userCollection.updateOne( filter, updateDoc, options)
     res.json(result) 
   })
+  
 
-          
+
+
+
+
+
+  app.post('/review', async(req , res) =>{
+    const user = req.body
+    const result = await playersReviewCollection.insertOne(user)
+    console.log(result)
+    res.json(result)
+})
+      
+
+
+app.get('/review', async(req , res) => {
+  const cursor = playersReviewCollection.find({});
+  const getreview = await cursor.toArray();
+  res.send(getreview);
+
+})
+
+
+
+
+
+
+
+
+
 
 
     }
