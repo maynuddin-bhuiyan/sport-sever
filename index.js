@@ -52,6 +52,10 @@ async function runerw() {
         const userCollection = database.collection('users');
         const cricketplayersCollection = database.collection('cricketplayers');
         const hockeyPuckPlayersCollection = database.collection('hockeyPuckPlayers');
+        const volleyBallPlayersCollection = database.collection('volleyBall');
+        const basketBallPlayersCollection = database.collection('basketBall');
+        const baseBallPlayersCollection = database.collection('baseBall');
+        const tableTennisPlayersCollection = database.collection('tableTennis');
         
         const playersReviewCollection = database.collection('review');
 
@@ -104,6 +108,43 @@ async function runerw() {
             const cursor = hockeyPuckPlayersCollection.find({});
             const gethockey = await cursor.toArray();
             res.send(gethockey);
+          
+          })
+
+
+
+
+          app.get('/tableTennis', async(req , res) => {
+            const cursor = tableTennisPlayersCollection.find({});
+            const getTableTennis = await cursor.toArray();
+            res.send(getTableTennis);
+          
+          })
+
+
+
+          app.get('/baseBall', async(req , res) => {
+            const cursor = baseBallPlayersCollection.find({});
+            const getBaseBall = await cursor.toArray();
+            res.send(getBaseBall);
+          
+          })
+
+
+
+          app.get('/basketBall', async(req , res) => {
+            const cursor = basketBallPlayersCollection.find({});
+            const getBasketBall = await cursor.toArray();
+            res.send(getBasketBall);
+          
+          })
+
+
+
+          app.get('/volleyBall', async(req , res) => {
+            const cursor = volleyBallPlayersCollection.find({});
+            const getVolleyBall = await cursor.toArray();
+            res.send(getVolleyBall);
           
           })
 
