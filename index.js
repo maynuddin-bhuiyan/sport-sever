@@ -58,7 +58,53 @@ async function runerw() {
         const tableTennisPlayersCollection = database.collection('tableTennis');
         
         const playersReviewCollection = database.collection('review');
-        const productCollection = database.collection('products');
+        const bookingTicketCollection = database.collection('booking');
+        const registerEventCollection = database.collection('eventRegister');
+
+
+
+        app.post('/booking', async(req, res)=> {
+          const tickets = req.body
+          console.log('hit the api ' , tickets)
+          const result = await bookingTicketCollection.insertOne(tickets)
+          console.log(result)
+          res.json(result)
+      })
+
+
+      app.post('/eventRegister', async(req, res)=> {
+        const tickets = req.body
+        console.log('hit the api ' , tickets)
+        const result = await registerEventCollection.insertOne(tickets)
+        console.log(result)
+        res.json(result)
+    })
+
+
+    app.get('/eventRegister', async(req , res) => {
+      const cursor = registerEventCollection.find({});
+      const getTickets = await cursor.toArray();
+      res.send(getTickets);
+    
+    })
+
+
+    app.get('/booking', async(req , res) => {
+      const cursor = bookingTicketCollection.find({});
+      const getTickets = await cursor.toArray();
+      res.send(getTickets);
+    
+    })
+
+
+
+
+
+
+
+
+
+
 
 
         app.get('/players', async(req , res) => {
@@ -87,13 +133,50 @@ async function runerw() {
           })
 
 
-          app.get('/other', async(req , res) => {
+          
+
+          app.get('/other', async (req, res) => {
+
             const cursor = otherCollection.find({});
-            const getother = await cursor.toArray();
-            res.send(getother);
-          
-          })
-          
+
+            const page = req.query.page;
+            const size = parseInt(req.query.size);
+            const count = await cursor.count();
+
+            let products;
+            if(page){
+                products = await cursor.skip(page*size).limit(size).toArray()
+            }
+            else{
+                products = await cursor.toArray();
+            }
+            
+
+            
+            res.send({
+                count,
+                products               
+            });
+
+
+        });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
           app.post('/other', async(req, res)=> {
             const products = req.body
