@@ -58,6 +58,7 @@ async function runerw() {
         const tableTennisPlayersCollection = database.collection('tableTennis');
         
         const playersReviewCollection = database.collection('review');
+        const productCollection = database.collection('products');
 
 
         app.get('/players', async(req , res) => {
@@ -204,7 +205,21 @@ async function runerw() {
 
 
 
+  app.post('/products', async(req, res)=> {
+    const products = req.body
+    console.log('hit the api ' , products)
+    const result = await productCollection.insertOne(products)
+    console.log(result)
+    res.json(result)
+})
 
+
+
+app.get('/products', async(req, res)=> {
+  const cursor = productCollection.find({})
+  const products =  await cursor.toArray()
+  res.send(products)
+})
 
 
 
