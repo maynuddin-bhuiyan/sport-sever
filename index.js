@@ -81,13 +81,7 @@ async function runerw() {
     })
 
 
-    app.delete('/booking/:id', async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: ObjectId(id) };
-      const result = await bookingTicketCollection.deleteOne(query);
-      res.json(result);
-      console.log(result);
-  })
+ 
 
     app.get('/eventRegister', async(req , res) => {
       const cursor = registerEventCollection.find({});
@@ -348,7 +342,13 @@ app.get('/review', async(req , res) => {
 
 
 
-
+app.delete('/booking/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: ObjectId(id) };
+  const result = await bookingTicketCollection.deleteOne(query);
+  res.json(result);
+  console.log(result);
+})
 
 
 
