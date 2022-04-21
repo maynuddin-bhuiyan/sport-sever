@@ -354,6 +354,7 @@ app.delete('/booking/:id', async (req, res) => {
 
 
 
+
 // update api (update a booking status)
 app.put('/update/:id', async(req,res)=>{
   const id = req.params.id;
@@ -368,6 +369,33 @@ app.put('/update/:id', async(req,res)=>{
   res.json(result)
 })
 
+
+
+app.delete('/eventRegister/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: ObjectId(id) };
+  console.log(id);
+  const result = await registerEventCollection.deleteOne(query);
+  res.json(result);
+  console.log(result);
+})
+
+
+
+
+// update api (update a booking status)
+app.put('/update/:id', async(req,res)=>{
+  const id = req.params.id;
+  const query = { _id: ObjectId(id) }
+  const updateStatus ={
+      $set:{
+          status:"approved"
+      }
+  }
+
+  const result = await registerEventCollection.updateOne(query,updateStatus)
+  res.json(result)
+})
 
 
     }
