@@ -61,6 +61,7 @@ async function runerw() {
         const playersReviewCollection = database.collection('review');
         const bookingTicketCollection = database.collection('booking');
         const registerEventCollection = database.collection('eventRegister');
+        const upcomingEventsCollection = database.collection('upcomingEvents');
 
 
 
@@ -396,6 +397,27 @@ app.put('/updatemere/:id', async(req,res)=>{
   const result = await registerEventCollection.updateOne(query,updateStatus)
   res.json(result)
 })
+
+
+
+
+
+
+
+app.get('/upcomingEvents', async(req , res) => {
+  const cursor = upcomingEventsCollection.find({});
+  const getEvents = await cursor.toArray();
+  res.send(getEvents);
+
+})
+
+
+
+
+
+
+
+
 
 
     }
