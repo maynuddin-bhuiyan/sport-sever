@@ -403,6 +403,11 @@ async function runerw() {
 
 
 
+
+
+
+
+
     // contest api 
     // insert perticipant registration 
     app.post("/contest/participant",async(req,res)=>{
@@ -422,6 +427,7 @@ async function runerw() {
       }
     })
 
+    
     // get all perticipant info 
     app.get("/contest/participant",async(req,res)=>{
       const all_participant = await contParticipantCollection.find({}).toArray()
