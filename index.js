@@ -76,6 +76,14 @@ async function runerw() {
       });
 
 
+      app.get('/ordersInfo', async (req, res) => {
+        const cursor = ordersInfoCollection.find({});
+        const ordersInfo = await cursor.toArray();
+        res.send(ordersInfo);
+  
+      })
+
+
     app.get('/upcomingEvents', async (req, res) => {
       const cursor = upcomingEventsCollection.find({});
       const getEvents = await cursor.toArray();
