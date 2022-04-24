@@ -62,6 +62,13 @@ async function runerw() {
     const bookingTicketCollection = database.collection('booking');
     const registerEventCollection = database.collection('eventRegister');
     const upcomingEventsCollection = database.collection('upcomingEvents');
+    const ordersInfoCollection = database.collection('ordersInfo');
+
+
+    app.post('/ordersInfo', async(req, res) =>{
+      const ordersInfo = await ordersInfoCollection.insertOne(req.body);
+      res.json(ordersInfo);
+      });
 
 
     app.get('/upcomingEvents', async (req, res) => {
