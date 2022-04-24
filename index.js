@@ -5,8 +5,10 @@ const cors = require('cors');
 require('dotenv').config();
 const app = express();
 const { MongoClient } = require('mongodb');
+const { getUniqueID, getRandomNumber } = require('./utilities');
 
 const ObjectId = require("mongodb").ObjectId;
+
 
 const port = process.env.PORT || 7000;
 
@@ -18,12 +20,13 @@ app.use(express.json());
 
 
 
+
 // Functionally Working,
 
 
 // Calling User and password with .env,
-
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.l2npz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.l2npz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2fqf1.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 
 
 // creating a client in MongoClient,
@@ -62,6 +65,10 @@ async function runerw() {
     const bookingTicketCollection = database.collection('booking');
     const registerEventCollection = database.collection('eventRegister');
     const upcomingEventsCollection = database.collection('upcomingEvents');
+    
+    const contParticipantCollection = database.collection('contestParticipant');
+    const contQuizeCollection = database.collection('contestQuizes');
+    const contResultCollection = database.collection('contestResult');
 
 
     app.get('/upcomingEvents', async (req, res) => {
@@ -170,16 +177,6 @@ async function runerw() {
 
 
     });
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -406,10 +403,194 @@ async function runerw() {
 
 
 
+    // contest api 
+    // insert perticipant registration 
+    app.post("/contest/participant",async(req,res)=>{
+      try {
+        const existPerticipant = await  contParticipantCollection.findOne({email:req.body?.email})
+        if(existPerticipant){
+          res.json({error:{message:`Already registered from ${req.body.email}`}})
+        }else{
+          const parID = getUniqueID();
+          const newParticipant = req.body;
+          newParticipant.par_id = parID;
+          const result = await  contParticipantCollection.insertOne(newParticipant)
+          res.json(result)
+        }
+      } catch (err) {
+        res.json({error:{message: err.message}})
+      }
+    })
+
+    // get all perticipant info 
+    app.get("/contest/participant",async(req,res)=>{
+      const all_participant = await contParticipantCollection.find({}).toArray()
+      res.json(all_participant)
+    })
+
+    // insert new quizes 
+    app.post("/contest/quizes",async(req,res)=>{
+      try {
+        const existQuize = await contQuizeCollection.findOne({question:req.body.question})
+        if (existQuize) {
+              res.json({error:{message:`This question is already added: ${req.body.question}`}})
+        }else{
+              const newQuize = req.body;
+              newQuize.qz_id = getUniqueID();
+              const result = await contQuizeCollection.insertOne(newQuize)
+              res.json(result)
+        }
+      } catch (err) {
+        res.json({error:{message: err.message}})
+      }
+    }) 
+
+    // get random quize 
+    app.post("/contest/run/quize",async(req,res)=>{
+      const isFinishedPerticipant = await contResultCollection.findOne({par_id:parseInt(req.body?.par_id)})
+      if (isFinishedPerticipant && (isFinishedPerticipant.contest_status === "completed")) {
+        const contestResultArray = await contResultCollection.find({par_id:parseInt(req.body?.par_id)}).project({_id:0, contest_status:1, question_count:1, remaining_time:1, valid_Score:1}).toArray(); 
+        const contest_result = contestResultArray[0]
+        res.json({contest_result,isFinishedPerticipant})
+      }else{
+        const previousAns = req.body?.prev_ans;
+        try {
+          const perticipant = await contParticipantCollection.findOne({par_id:parseInt(req.body.par_id)})
+          if (perticipant) {
+            const playingPerticipant = await contResultCollection.findOne({par_id:parseInt(req.body.par_id)})
+            if (playingPerticipant) {
+              // get all quizes ID 
+              const quizeQuerOptions ={lavel: perticipant.lavel, playing_ctg: perticipant.playing_ctg}
+              const ctgQuizesID = await contQuizeCollection.find(quizeQuerOptions).project({_id:0,qz_id:1}).toArray();
+              const uniqueIds = ctgQuizesID.filter(item=> !playingPerticipant.given_quizes_id.includes(item.qz_id))
+              const randomIndex = getRandomNumber(0,uniqueIds.length-1)
+              // find the next quize 
+              const nextQuizeArray = await contQuizeCollection.find(uniqueIds[randomIndex]).project({_id:0,qz_id:1,question:1,options:1}).toArray();
+              const nextQuize = nextQuizeArray[0];
+              // calculate score
+              const ansOptions = {qz_id:parseInt(req.body?.prev_question_id)}
+              const previousQuize = await contQuizeCollection.find(ansOptions).project({_id:0,ans:1}).toArray();
+              let last_quize_score = 0;
+              if (!previousAns) {
+                last_quize_score = -1;
+              }else if (previousAns === previousQuize[0]?.ans) {
+                last_quize_score = 5;
+              }else{
+                last_quize_score = -2;
+              }
+              
+              // Create the new update result
+              const previousResult = {
+                question_count: playingPerticipant.question_count + 1,
+                last_quize_release_time: Date.now(),
+                last_answer_receive_time: Date.now(),
+                time_consumed: playingPerticipant.time_consumed + ( Date.now() - playingPerticipant.last_quize_release_time), // milliseconds
+                remaining_time: (playingPerticipant.question_count * 1 * 60 * 1000) - (playingPerticipant.time_consumed + Date.now() - playingPerticipant.last_quize_release_time),
+                valid_Score: playingPerticipant.valid_Score + last_quize_score,
+                given_quizes_id: [...playingPerticipant.given_quizes_id, nextQuize.qz_id]
+              }
+              if (previousResult.question_count === 10 && playingPerticipant?.contest_status === "running") {
+                // update the DB and tell the UI finished contest and not send next quize but sent the result
+                previousResult.contest_status = "completed";
+                previousResult.contest_ended = Date.now();
+                const resultUpdate = await contResultCollection.updateOne({par_id:playingPerticipant.par_id},{$set: previousResult},{upsert:false})
+                // send the response to UI 
+                if (resultUpdate.modifiedCount > 0) {
+                    res.json({quize_status:previousResult.contest_status, total_question:previousResult.question_count, remaining_time:previousResult.remaining_time, valid_Score:previousResult.valid_Score})
+                }else{
+                  res.json({error:{message:"Something went wrong."}})
+                }
+              }else{
+                // update the DB 
+                const resultUpdate = await contResultCollection.updateOne({par_id:playingPerticipant.par_id},{$set: previousResult}, {upsert:false})
+                  // send the next quize 
+                  if ((resultUpdate.modifiedCount > 0 ) && nextQuize.qz_id) { 
+                      res.json(nextQuize)
+                  }else{
+                    console.log("no int");
+                    res.json({error:{message:"Something went wrong."}})
+                  }
+              }
+              }else{
+                // start the contast and insert the data for first quize
+                // get all quizes
+                const quizeQuerOptions ={lavel: perticipant.lavel, playing_ctg: perticipant.playing_ctg, }
+                const ctgQuizesID = await contQuizeCollection.find(quizeQuerOptions)
+                .project({_id:0,qz_id:1,question:1,options:1}).toArray();
+                // choose a random quize 
+                const randomIndex = getRandomNumber(0,ctgQuizesID.length-1)
+                const selectedQuize = ctgQuizesID[randomIndex]
+                // insert the result data into result collection
+                const newPerticipantResult = {
+                  par_id: perticipant.par_id,
+                  lavel: perticipant.lavel, 
+                  playing_ctg: perticipant.playing_ctg,
+                  contest_status: "running",
+                  question_count: 1,
+                  contest_started: Date.now(),
+                  contest_ended: null,
+                  last_quize_release_time: Date.now(),
+                  last_answer_receive_time: Date.now(),
+                  time_consumed: 0, // milliseconds
+                  remaining_time: 0,
+                  valid_Score: 0,
+                  given_quizes_id: [selectedQuize.qz_id]
+                  // "time_consumed":"time_consumed + (last_answer_receive_time_BODY - last_quize_release_time_DB)",
+                  // "remaining_time": "(question_count * 1 * 60 * 1000) - (time_consumed + last_answer_receive_time_BODY - last_quize_release_time_DB)"
+                }
+                 const insertRedult = await contResultCollection.insertOne(newPerticipantResult);
+                 
+                 if (insertRedult.insertedId && selectedQuize.qz_id) {
+                    res.json(selectedQuize)
+                  }else{
+                   res.json({error:{message:"Something went wrong."}})
+                 }
+            }
+            
+          }else{
+            res.json({message:"You have not registered for this contest"})
+          }
+        } catch (err) {
+          res.json({error:{message: err.message}})
+        }
+      }
+    })
+
+    // get contest result 
+    app.post("/contest/result",async(req,res)=>{
+      const resultOptions = {lavel: req.body?.lavel, playing_ctg: req.body?.playing_ctg, contest_status:"completed"}
+      try {
+        const contestResults = await contResultCollection.find(resultOptions).project({_id:0,par_id:1,remaining_time:1,valid_Score:1}).toArray()
+        // add the position for each participant (calc)
+        
+        const finalResults = [];
+        contestResults.forEach((result)=>{
+          const _result ={...result}
+          _result.total_score =  parseInt(_result.valid_Score) +  Math.floor((parseInt(_result.remaining_time) /1000)/10)  // convert milliseconds=>seconds and give 1 point for every 10 seconds
+          finalResults.push(_result)
+        })
+        let highestToLowest = finalResults.sort((a, b) => parseFloat(b.total_score) - parseFloat(a.total_score));
+        const sendResult = [];
+        highestToLowest.forEach((item,index)=>{
+          item.position = index + 1;
+          sendResult.push(item);
+        })
+        res.json(sendResult)
+      } catch (err) {
+        res.json({error:{message: err.message}})
+      }
+    })
 
 
+
+
+
+
+    // end of mongodb connection 
 
   }
+
+
   finally {
     //  await client.close();
   }
@@ -431,3 +612,44 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`listening at http://localhost:${port}`)
 })
+
+const qRe ={
+  "par_id": 45454,
+  "question_count": 0,
+  "prev_question_id":"",
+  "prev_ans":"",
+}
+/*
+const resultSchema = {
+  "par_id": 45454,
+  "contest_status": "running"|"end",
+  "question_count": 0,
+  "contest_started": Date.now(),
+  "contest_ended": Date.now(),
+  "last_quize_release_time": Date.now(),
+  "last_answer_receive_time": Date.now(),
+  "time_consumed":"time_consumed + (last_answer_receive_time - last_quize_release_time)",
+  "remaining_time": "(question_count * 1 * 60 * 1000) - (time_consumed + last_answer_receive_time - last_quize_release_time)"
+  "valid_Score":"",
+  "given_quizes_id": []
+}
+*/
+/*
+user id:
+question_count: 10 //max 10
+prev_question: "",
+prev_ans: "",
+quize_release_time: Date.now();
+answer_receive_time: Date.now();
+time_consumed: ((answer_receive_time - quize_release_time)/1000).toFixed(4),
+remaining_time: "",
+total_time: "60",
+reamining_time: 0,
+valid_point: "",
+
+wrong_answer: -2 point
+no answer: -1
+right answer: 5
+*/
+
+
