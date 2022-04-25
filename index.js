@@ -100,6 +100,14 @@ async function runerw() {
       })
 
 
+      app.get('/ordersInfo/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: ObjectId(id) };
+        const orders = await ordersInfoCollection.findOne(query);
+        res.json(orders);
+    })
+
+
 
 
 
@@ -652,12 +660,7 @@ async function runerw() {
 
 
 
-    app.get('/ordersInfo/:id', async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: ObjectId(id) };
-      const orders = await ordersInfoCollection.findOne(query);
-      res.json(orders);
-  })
+ 
 
 
     
