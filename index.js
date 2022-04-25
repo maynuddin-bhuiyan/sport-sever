@@ -20,7 +20,7 @@ app.use(
     origin: "*",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     preflightContinue: false
-  })
+  }) 
 )
 
 app.use(express.json());
@@ -79,10 +79,17 @@ async function runerw() {
     const contResultCollection = database.collection('contestResult');
 
 
+
+
+
+
     app.post('/ordersInfo', async(req, res) =>{
       const ordersInfo = await ordersInfoCollection.insertOne(req.body);
       res.json(ordersInfo);
       });
+
+
+
 
 
       app.get('/ordersInfo', async (req, res) => {
@@ -91,6 +98,9 @@ async function runerw() {
         res.send(ordersInfo);
   
       })
+
+
+
 
 
     app.get('/upcomingEvents', async (req, res) => {
@@ -635,6 +645,22 @@ async function runerw() {
         res.json({error:{message: err.message}})
       }
     })
+
+
+
+
+
+
+
+    app.get('/ordersInfo/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const orders = await ordersInfoCollection.findOne(query);
+      res.json(orders);
+  })
+
+
+    
 
 
 
