@@ -13,17 +13,26 @@ const port = process.env.PORT || 7000;
 
 //Middleware Work,
 
+// app.use(
+//   cors({
+//     // allowedHeaders: ["authorization", "Content-Type"], 
+//     // you can change the headers
+//     // exposedHeaders: ["authorization"], 
+//     // you can change the headers
+//     // origin: "*",
+//     // methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+//     // preflightContinue: false
+//   }) 
+// )
+
+
+
 app.use(
-  cors({
-    allowedHeaders: ["authorization", "Content-Type"], 
-    // you can change the headers
-    exposedHeaders: ["authorization"], 
-    // you can change the headers
-    origin: "*",
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    preflightContinue: false
-  }) 
-)
+  cors()
+);
+
+
+
 
 app.use(express.json());
 
@@ -663,7 +672,7 @@ async function runerw() {
         res.json({par_id:userInfo.par_id,email:userInfo.email})
       })
 
-      
+
 
 
 
