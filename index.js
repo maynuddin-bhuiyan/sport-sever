@@ -15,8 +15,10 @@ const port = process.env.PORT || 7000;
 
 app.use(
   cors({
-    allowedHeaders: ["authorization", "Content-Type"], // you can change the headers
-    exposedHeaders: ["authorization"], // you can change the headers
+    allowedHeaders: ["authorization", "Content-Type"], 
+    // you can change the headers
+    exposedHeaders: ["authorization"], 
+    // you can change the headers
     origin: "*",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     preflightContinue: false
@@ -90,6 +92,9 @@ async function runerw() {
 
 
 
+  
+
+
 
 
       app.get('/ordersInfo', async (req, res) => {
@@ -100,13 +105,7 @@ async function runerw() {
       })
 
 
-      app.get('/other/:id', async (req, res) => {
-        const id = req.params.id;
-        const query = { _id: ObjectId(id) };
-        const orders = await otherCollection.findOne(query);
-        res.json(orders);
-    })
-
+  
 
 
 
