@@ -7,7 +7,7 @@ const app = express();
 const { MongoClient } = require('mongodb');
 
 const ObjectId = require("mongodb").ObjectId;
-
+const stripe = require('stripe')(process.env.SPRIPE_SECRET);
 const port = process.env.PORT || 7000;
 
 
@@ -654,6 +654,31 @@ async function runerw() {
     })
 
 
+
+      // get single user par_id participant info by email 
+      app.get("/contest/id/:userEmail",async(req,res)=>{
+        const {userEmail} = req.params;
+        const userInfo = await contParticipantCollection.findOne({email:userEmail});
+        console.log(userInfo,userEmail);
+        res.json({par_id:userInfo.par_id,email:userInfo.email})
+      })
+
+      
+
+
+
+
+
+    app.post('/create-payment-intent', async (req, res) => {
+      const paymentInfo = req.body;
+      const amount = paymentInfo.price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+          currency: 'usd',
+          amount: amount,
+          payment_method_types: ['card']
+      });
+      res.json({ clientSecret: paymentIntent.client_secret })
+  })
 
 
 
