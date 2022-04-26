@@ -464,6 +464,7 @@ async function runerw() {
           const perticipant = await contParticipantCollection.findOne({par_id:parseInt(req.body.par_id)})
           if (perticipant) {
             const playingPerticipant = await contResultCollection.findOne({par_id:parseInt(req.body.par_id)})
+            
             if (playingPerticipant) {
               // get all quizes ID 
               const quizeQuerOptions ={lavel: perticipant.lavel, playing_ctg: perticipant.playing_ctg}
@@ -526,6 +527,7 @@ async function runerw() {
                 // choose a random quize 
                 const randomIndex = getRandomNumber(0,ctgQuizesID.length-1)
                 const selectedQuize = ctgQuizesID[randomIndex]
+                console.log(selectedQuize,quizeQuerOptions,"i am new");
                 // insert the result data into result collection
                 const newPerticipantResult = {
                   par_id: perticipant.par_id,
@@ -544,7 +546,8 @@ async function runerw() {
                   // "time_consumed":"time_consumed + (last_answer_receive_time_BODY - last_quize_release_time_DB)",
                   // "remaining_time": "(question_count * 1 * 60 * 1000) - (time_consumed + last_answer_receive_time_BODY - last_quize_release_time_DB)"
                 }
-                 const insertRedult = await contResultCollection.insertOne(newPerticipantResult);
+                console.log(newPerticipantResult); 
+                const insertRedult = await contResultCollection.insertOne(newPerticipantResult);
                  
                  if (insertRedult.insertedId && selectedQuize.qz_id) {
                     res.json(selectedQuize)
@@ -564,6 +567,7 @@ async function runerw() {
 
     // get contest result 
     app.post("/contest/result",async(req,res)=>{
+      console.log(req.body);
       const resultOptions = {lavel: req.body?.lavel, playing_ctg: req.body?.playing_ctg, contest_status:"completed"}
       try {
         const contestResults = await contResultCollection.find(resultOptions).project({_id:0,par_id:1,remaining_time:1,valid_Score:1}).toArray()
@@ -581,14 +585,21 @@ async function runerw() {
           item.position = index + 1;
           sendResult.push(item);
         })
+        console.log(sendResult);
         res.json(sendResult)
       } catch (err) {
         res.json({error:{message: err.message}})
       }
     })
 
-
-
+    // new added
+    // get single user par_id participant info by email 
+    app.get("/contest/id/:userEmail",async(req,res)=>{
+      const {userEmail} = req.params;
+      const userInfo = await contParticipantCollection.findOne({email:userEmail});
+      console.log(userInfo,userEmail);
+      res.json({par_id:userInfo.par_id,email:userInfo.email})
+    })
 
 
 
