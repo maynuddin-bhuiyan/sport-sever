@@ -25,8 +25,8 @@ app.use(express.json());
 
 
 // Calling User and password with .env,
-// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.l2npz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2fqf1.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.l2npz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2fqf1.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 
 
 // creating a client in MongoClient,
@@ -630,12 +630,9 @@ app.listen(port, () => {
   console.log(`listening at http://localhost:${port}`)
 })
 
-const qRe ={
-  "par_id": 45454,
-  "question_count": 0,
-  "prev_question_id":"",
-  "prev_ans":"",
-}
+
+
+
 /*
 const resultSchema = {
   "par_id": 45454,
