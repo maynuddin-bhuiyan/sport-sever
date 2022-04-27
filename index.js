@@ -89,8 +89,15 @@ async function runerw() {
     const contParticipantCollection = database.collection('contestParticipant');
     const contQuizeCollection = database.collection('contestQuizes');
     const contResultCollection = database.collection('contestResult');
+    const featuresProductsCollection = database.collection('featuresProducts');
 
 
+    app.get('/featuresProducts', async (req, res) => {
+      const cursor = featuresProductsCollection.find({});
+      const featuresInfo = await cursor.toArray();
+      res.send(featuresInfo);
+
+    })
 
 
 
