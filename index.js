@@ -12,7 +12,7 @@ const stripe = require('stripe')(process.env.SPRIPE_SECRET);
 const port = process.env.PORT || 7000;
 
 
-//Middleware Work,
+// Middleware Work,
 
 // app.use(
 //   cors({
