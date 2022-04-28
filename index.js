@@ -16,6 +16,19 @@ const port = process.env.PORT || 7000;
 //Middleware Work,
 
 app.use(cors());
+// app.use(
+//   cors({
+//     allowedHeaders: ["authorization", "Content-Type"], 
+//    // you can change the headers
+//     exposedHeaders: ["authorization"], 
+//     //you can change the headers
+//     origin: "*",
+//     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+//     preflightContinue: false
+//   }) 
+// )
+
+
 app.use(express.json());
 
 
@@ -65,10 +78,14 @@ async function runerw() {
     const bookingTicketCollection = database.collection('booking');
     const registerEventCollection = database.collection('eventRegister');
     const upcomingEventsCollection = database.collection('upcomingEvents');
+
     
     const contParticipantCollection = database.collection('contestParticipant');
     const contQuizeCollection = database.collection('contestQuizes');
     const contResultCollection = database.collection('contestResult');
+    
+    const featuresProductsCollection = database.collection('featuresProducts');
+    const ordersInfoCollection = database.collection('ordersInfo');
 
 
     app.get('/upcomingEvents', async (req, res) => {
@@ -402,6 +419,13 @@ async function runerw() {
     })
 
 
+    app.get('/featuresProducts', async (req, res) => {
+      const cursor = featuresProductsCollection.find({});
+      const featuresInfo = await cursor.toArray();
+      res.send(featuresInfo);
+
+    })
+
 
 
 
@@ -602,6 +626,30 @@ async function runerw() {
     })
 
 
+    app.post('/ordersInfo', async(req, res) =>{
+      const ordersInfo = await ordersInfoCollection.insertOne(req.body);
+      res.json(ordersInfo);
+      });
+
+      app.get('/ordersInfo', async (req, res) => {
+        const cursor = ordersInfoCollection.find({});
+        const ordersInfo = await cursor.toArray();
+        res.json(ordersInfo);
+      })
+
+
+      // payment stripe
+      app.post('/create-payment-intent', async (req, res) => {
+        const paymentInfo = req.body;
+        const amount = paymentInfo.price * 100;
+        const paymentIntent = await stripe.paymentIntents.create({
+            currency: 'usd',
+            amount: amount,
+            payment_method_types: ['card']
+        });
+        res.json({ clientSecret: paymentIntent.client_secret })
+    })
+
 
     // end of mongodb connection 
 
@@ -624,6 +672,10 @@ runerw().catch(console.dir);
 
 app.get('/', (req, res) => {
   res.send('SportClub.com')
+})
+
+app.get('/test', (req, res) => {
+  res.send('SportClub.com test API')
 })
 
 app.listen(port, () => {
