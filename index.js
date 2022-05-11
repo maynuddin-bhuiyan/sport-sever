@@ -1,14 +1,15 @@
 // Basic Working,
-
+const nodemailer = require("nodemailer");
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const app = express();
 const { MongoClient } = require('mongodb');
-const { getUniqueID } = require('./utilities');
+const { getUniqueID, getRandomNumber } = require('./utilities');
 
 const ObjectId = require("mongodb").ObjectId;
-const stripe = require('stripe')(process.env.SPRIPE_SECRET);
+
+
 const port = process.env.PORT || 7000;
 
 
@@ -35,7 +36,22 @@ app.use(
 
 
 
+app.use(cors());
+// app.use(
+//   cors({
+//     allowedHeaders: ["authorization", "Content-Type"], 
+//    // you can change the headers
+//     exposedHeaders: ["authorization"], 
+//     //you can change the headers
+//     origin: "*",
+//     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+//     preflightContinue: false
+//   }) 
+// )
+
+
 app.use(express.json());
+
 
 
 
@@ -43,8 +59,8 @@ app.use(express.json());
 
 
 // Calling User and password with .env,
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.l2npz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2fqf1.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 
 
 // creating a client in MongoClient,
@@ -116,8 +132,7 @@ async function runerw() {
 
 
   
-
-
+      
 
 
     app.get('/upcomingEvents', async (req, res) => {
@@ -226,16 +241,6 @@ async function runerw() {
 
 
     });
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -461,12 +466,20 @@ async function runerw() {
     })
 
 
+    app.get('/featuresProducts', async (req, res) => {
+      const cursor = featuresProductsCollection.find({});
+      const featuresInfo = await cursor.toArray();
+      res.send(featuresInfo);
+
+    })
 
 
 
-// contest api 
 
 
+
+
+    // contest api 
     // insert perticipant registration 
     app.post("/contest/participant",async(req,res)=>{
       try {
@@ -485,16 +498,12 @@ async function runerw() {
       }
     })
 
-
-
-
+    
     // get all perticipant info 
-        app.get("/contest/participant",async(req,res)=>{
-          const all_participant = await contParticipantCollection.find({}).toArray()
-          res.json(all_participant)
-        })
-
-
+    app.get("/contest/participant",async(req,res)=>{
+      const all_participant = await contParticipantCollection.find({}).toArray()
+      res.json(all_participant)
+    })
 
     // insert new quizes 
     app.post("/contest/quizes",async(req,res)=>{
@@ -511,15 +520,7 @@ async function runerw() {
       } catch (err) {
         res.json({error:{message: err.message}})
       }
-    })
-
-
-
-
-
-
-
-
+    }) 
 
     // get random quize 
     app.post("/contest/run/quize",async(req,res)=>{
@@ -534,6 +535,7 @@ async function runerw() {
           const perticipant = await contParticipantCollection.findOne({par_id:parseInt(req.body.par_id)})
           if (perticipant) {
             const playingPerticipant = await contResultCollection.findOne({par_id:parseInt(req.body.par_id)})
+            
             if (playingPerticipant) {
               // get all quizes ID 
               const quizeQuerOptions ={lavel: perticipant.lavel, playing_ctg: perticipant.playing_ctg}
@@ -596,6 +598,7 @@ async function runerw() {
                 // choose a random quize 
                 const randomIndex = getRandomNumber(0,ctgQuizesID.length-1)
                 const selectedQuize = ctgQuizesID[randomIndex]
+                console.log(selectedQuize,quizeQuerOptions,"i am new");
                 // insert the result data into result collection
                 const newPerticipantResult = {
                   par_id: perticipant.par_id,
@@ -614,7 +617,8 @@ async function runerw() {
                   // "time_consumed":"time_consumed + (last_answer_receive_time_BODY - last_quize_release_time_DB)",
                   // "remaining_time": "(question_count * 1 * 60 * 1000) - (time_consumed + last_answer_receive_time_BODY - last_quize_release_time_DB)"
                 }
-                 const insertRedult = await contResultCollection.insertOne(newPerticipantResult);
+                console.log(newPerticipantResult); 
+                const insertRedult = await contResultCollection.insertOne(newPerticipantResult);
                  
                  if (insertRedult.insertedId && selectedQuize.qz_id) {
                     res.json(selectedQuize)
@@ -632,14 +636,9 @@ async function runerw() {
       }
     })
 
-
-
-
-
-
-
     // get contest result 
     app.post("/contest/result",async(req,res)=>{
+      console.log(req.body);
       const resultOptions = {lavel: req.body?.lavel, playing_ctg: req.body?.playing_ctg, contest_status:"completed"}
       try {
         const contestResults = await contResultCollection.find(resultOptions).project({_id:0,par_id:1,remaining_time:1,valid_Score:1}).toArray()
@@ -657,56 +656,83 @@ async function runerw() {
           item.position = index + 1;
           sendResult.push(item);
         })
+        console.log(sendResult);
         res.json(sendResult)
       } catch (err) {
         res.json({error:{message: err.message}})
       }
     })
 
+    
+    // get single contest user par_id participant info by email 
+    app.get("/contest/id/:userEmail",async(req,res)=>{
+      const {userEmail} = req.params;
+      const userInfo = await contParticipantCollection.findOne({email:userEmail});
+      console.log(userInfo,userEmail);
+      res.json({par_id:userInfo?.par_id,email:userInfo?.email})
+    })
 
 
-      // get single user par_id participant info by email 
-      app.get("/contest/id/:userEmail",async(req,res)=>{
-        const {userEmail} = req.params;
-        const userInfo = await contParticipantCollection.findOne({email:userEmail});
-        console.log(userInfo,userEmail);
-        res.json({par_id:userInfo.par_id,email:userInfo.email})
+    // send player's email
+    app.post("/player/sendEmail",async(req,res)=>{
+      // let testAccount = await nodemailer.createTestAccount();
+
+      // create reusable transporter object using the default SMTP transport
+      let transporter = nodemailer.createTransport({
+        service: 'gmail',
+        // host: "smtp.ethereal.email",
+        // port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: `${process.env.NODE_MAILER_USER}`, // generated ethereal user
+          pass: `${process.env.NODE_MAILER_PASS}`, // generated ethereal password
+        },
+      });
+
+       // send mail with defined transport object
+        let info = await transporter.sendMail({
+          from: `"Fred Foo 👻" <${process.env.NODE_MAILER_USER}>`, // sender address
+          to: `${req.body.email}`, // list of receivers
+          subject: "Communicate With Player", // Subject line
+          text: `${req.body.message}`, // plain text body
+          // html: `<p>${req.body.message}</p>`, // html body
+        });
+
+        res.json(info)
+
+    })
+
+
+    app.post('/ordersInfo', async(req, res) =>{
+      const ordersInfo = await ordersInfoCollection.insertOne(req.body);
+      res.json(ordersInfo);
+      });
+
+      app.get('/ordersInfo', async (req, res) => {
+        const cursor = ordersInfoCollection.find({});
+        const ordersInfo = await cursor.toArray();
+        res.json(ordersInfo);
       })
 
 
+      // payment stripe
+      app.post('/create-payment-intent', async (req, res) => {
+        const paymentInfo = req.body;
+        const amount = paymentInfo.price * 100;
+        const paymentIntent = await stripe.paymentIntents.create({
+            currency: 'usd',
+            amount: amount,
+            payment_method_types: ['card']
+        });
+        res.json({ clientSecret: paymentIntent.client_secret })
+    })
 
 
-
-
-
-    app.post('/create-payment-intent', async (req, res) => {
-      const paymentInfo = req.body;
-      const amount = paymentInfo.price * 100;
-      const paymentIntent = await stripe.paymentIntents.create({
-          currency: 'usd',
-          amount: amount,
-          payment_method_types: ['card']
-      });
-      res.json({ clientSecret: paymentIntent.client_secret })
-  })
-
-
-
-
-
- 
-
-
-    
-
-
-
-
-
-
-
+    // end of mongodb connection 
 
   }
+
+
   finally {
     //  await client.close();
   }
@@ -725,6 +751,48 @@ app.get('/', (req, res) => {
   res.send('SportClub.com')
 })
 
+app.get('/test', (req, res) => {
+  res.send('SportClub.com test API')
+})
+
 app.listen(port, () => {
   console.log(`listening at http://localhost:${port}`)
 })
+
+
+
+
+/*
+const resultSchema = {
+  "par_id": 45454,
+  "contest_status": "running"|"end",
+  "question_count": 0,
+  "contest_started": Date.now(),
+  "contest_ended": Date.now(),
+  "last_quize_release_time": Date.now(),
+  "last_answer_receive_time": Date.now(),
+  "time_consumed":"time_consumed + (last_answer_receive_time - last_quize_release_time)",
+  "remaining_time": "(question_count * 1 * 60 * 1000) - (time_consumed + last_answer_receive_time - last_quize_release_time)"
+  "valid_Score":"",
+  "given_quizes_id": []
+}
+*/
+/*
+user id:
+question_count: 10 //max 10
+prev_question: "",
+prev_ans: "",
+quize_release_time: Date.now();
+answer_receive_time: Date.now();
+time_consumed: ((answer_receive_time - quize_release_time)/1000).toFixed(4),
+remaining_time: "",
+total_time: "60",
+reamining_time: 0,
+valid_point: "",
+
+wrong_answer: -2 point
+no answer: -1
+right answer: 5
+*/
+
+
