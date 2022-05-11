@@ -669,7 +669,7 @@ async function runerw() {
       const {userEmail} = req.params;
       const userInfo = await contParticipantCollection.findOne({email:userEmail});
       console.log(userInfo,userEmail);
-      res.json({par_id:userInfo.par_id,email:userInfo.email})
+      res.json({par_id:userInfo?.par_id,email:userInfo?.email})
     })
 
 
