@@ -6,10 +6,18 @@ require('dotenv').config();
 const app = express();
 const { MongoClient } = require('mongodb');
 const { getUniqueID } = require('./utilities');
+const {createServer} = require("http");
+const { Server, socket } = require('socket.io');
 
 const ObjectId = require("mongodb").ObjectId;
 const stripe = require('stripe')(process.env.SPRIPE_SECRET);
 const port = process.env.PORT || 7000;
+
+
+
+
+
+
 
 
 // Middleware Work,
@@ -32,6 +40,13 @@ app.use(
   cors()
 );
 
+const http = createServer(app);
+const io = new Server(http, {
+  cors:{
+    origin: ["http://localhost:3000"]
+  }
+})
+
 
 
 
@@ -40,6 +55,10 @@ app.use(express.json());
 
 
 // Functionally Working,
+
+
+
+
 
 
 // Calling User and password with .env,
@@ -56,6 +75,51 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 
 console.log(uri);
+
+
+const soketList = [];
+
+const questionList = [
+  {question:"Hello, How are you?",Ans:"I am fine"},
+  {question:"Where are you from?",Ans:"I am from dhaka"},
+  {question:"question 1",Ans:"ans 1"},
+  {question:"question 2",Ans:"ans 2"},
+  {question:"question 3",Ans:"ans 3"},
+  {question:"question 4",Ans:"ans 4"},
+  {question:"question 5",Ans:"ans 5"},
+  {question:"question 6",Ans:"ans 6"},
+]
+
+//Whenever someone connects this gets executed
+io.on('connection', function(socket) {
+  soketList.push(socket.id);
+  
+  // send message to user 
+  socket.on("chatMessage",(data)=>{
+   
+    console.log(data);
+    const reqQuestion = questionList.filter(item => data.message === item.question);
+    const userID = soketList.filter(id => id === socket.id);
+    const genericReplay = {question: data.message,Ans:"Please send a mail to us from contact us page for inquire more.",contact_link:"http://localhost:3000/contact"}
+    const replay = reqQuestion[0] ? reqQuestion[0] : genericReplay;
+    io.to(userID).emit("getMessage",{user_id:userID[0],ans: replay})
+  })
+
+
+  //Whenever someone disconnects this piece of code executed
+  socket.on('disconnect', function () {
+     console.log('A user disconnected ', socket.id);
+     const rmIdx = soketList.indexOf(socket.id);
+     soketList.splice(rmIdx,1);
+  });
+});
+
+
+
+
+
+
+
 
 
 // Work on Async Function used in data,
@@ -359,7 +423,7 @@ async function runerw() {
 
 
     app.get('/users/:email', async (req, res) => {
-      const email = req.params.email
+      const email = req.params.email     
       const query = { email: email }
       const user = await userCollection.findOne(query)
       let isAdmin = false;
@@ -368,25 +432,6 @@ async function runerw() {
       }
       res.json({ admin: isAdmin })
     })
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -702,7 +747,13 @@ async function runerw() {
 
 
 
+
+
+
+
  
+
+
 
 
     
@@ -733,6 +784,6 @@ app.get('/', (req, res) => {
   res.send('SportClub.com')
 })
 
-app.listen(port, () => {
+http.listen(port, () => {
   console.log(`listening at http://localhost:${port}`)
 })
