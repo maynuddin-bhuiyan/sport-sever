@@ -79,15 +79,18 @@ console.log(uri);
 
 const soketList = [];
 
+
+
 const questionList = [
   {question:"Hello, How are you?",Ans:"I am fine"},
   {question:"Where are you from?",Ans:"I am from dhaka"},
-  {question:"question 1",Ans:"ans 1"},
-  {question:"question 2",Ans:"ans 2"},
-  {question:"question 3",Ans:"ans 3"},
-  {question:"question 4",Ans:"ans 4"},
-  {question:"question 5",Ans:"ans 5"},
-  {question:"question 6",Ans:"ans 6"},
+  {question:"Hello",Ans:"How Can I Help You?"},
+  {question:"Hi",Ans:"How Can I Help You?"},
+  {question:"I need some Prodect",Ans:"Ok, What Type..?"},
+  {question:"How much",Ans:"it's 100$"},
+  {question:"any new contest here",Ans:"Sorry sir it's not available right time"},
+  {question:"Thank You",Ans:"You are must Wellcame"},
+  {question:"Thanks",Ans:"Wellcame"}
 ]
 
 //Whenever someone connects this gets executed
@@ -101,7 +104,7 @@ io.on('connection', function(socket) {
     const reqQuestion = questionList.filter(item => data.message === item.question);
     const userID = soketList.filter(id => id === socket.id);
     const genericReplay = {question: data.message,Ans:"Please send a mail to us from contact us page for inquire more.",contact_link:"http://localhost:3000/contact"}
-    const replay = reqQuestion[0] ? reqQuestion[0] : genericReplay;
+    const replay = reqQuestion[0] ? reqQuestion[0] : genericReplay;    
     io.to(userID).emit("getMessage",{user_id:userID[0],ans: replay})
   })
 
