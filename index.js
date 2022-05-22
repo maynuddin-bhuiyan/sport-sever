@@ -10,6 +10,9 @@ const app = express();
 const { MongoClient } = require('mongodb');
 const { getUniqueID, getRandomNumber } = require('./utilities');
 
+const {createServer} = require("http");
+const { Server, socket } = require('socket.io');
+
 const ObjectId = require("mongodb").ObjectId;
 
 
@@ -32,13 +35,6 @@ const port = process.env.PORT || 7000;
 
 
 
-app.use(
-  cors()
-);
-
-
-
-
 app.use(cors());
 // app.use(
 //   cors({
@@ -55,6 +51,13 @@ app.use(cors());
 
 app.use(express.json());
 
+const http = createServer(app);
+const io = new Server(http, {
+  cors:{
+    origin: ["http://localhost:3000","https://sports-club-70293.web.app"]
+  }
+})
+
 
 
 
@@ -69,17 +72,84 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 // creating a client in MongoClient,
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-
-
-
-
-
 console.log(uri);
+
+
+// Socket implementation 
+const soketList = [];
+const adminList = [];
+const questionList = [
+  {question:"Hello, How are you?",Ans:"I am fine"},
+  {question:"Where are you from?",Ans:"I am from dhaka"},
+  {question:"Hello",Ans:"How Can I Help You?"},
+  {question:"Hi",Ans:"How Can I Help You?"},
+  {question:"I need some Prodect",Ans:"Ok, What Type..?"},
+  {question:"How much",Ans:"it's 100$"},
+  {question:"any new contest here",Ans:"Sorry sir it's not available right time"},
+  {question:"Thank You",Ans:"You are must Wellcame"},
+  {question:"Thanks",Ans:"Wellcame"}
+]
+
+//Whenever someone connects this gets executed
+io.on('connection', function(socket) {
+  
+  // send message to user 
+  socket.on("chatMessage",(data)=>{
+    const userIDExist = soketList.filter(id => id === socket.id);
+    // console.log(userIDExist,"userIDExist");
+    if (!userIDExist.length && !data.admin) {
+      soketList.push(socket.id);
+      // console.log(userIDExist,"userIDExist userIDExist");
+    }
+    if (data.admin && !data.message) {
+      const isExit = adminList.filter(item=>item.email === data.admin_email);
+      if (isExit.length === 0) {
+        adminList.push({socketID:socket.id,email:data.admin_email})
+      }
+    }
+
+    // console.log(soketList,"soketList",adminList,"adminList-----------------");
+    const userID = soketList.filter(id => id === socket.id);
+    console.log(soketList,"soketList");
+    if (userID.length) {
+      io.to(adminList[0]?.socketID).emit("getMessage",{user_id:userID[0],question: data.message});
+    }else{
+      const adminUser = adminList.filter(item => item.socketID === socket.id);
+      console.log(adminUser,"adminUser");
+      if (adminUser) {
+        const userID = soketList.filter(id => id === data.user_id);
+        io.to(data.user_id).emit("getMessage",{user_id:userID[0],ans: data.message});
+      }
+
+    }
+
+    
+    console.log(data);
+    // const reqQuestion = questionList.filter(item => data.message === item.question);
+    // const userID = soketList.filter(id => id === socket.id);
+    // const genericReplay = {question: data.message,Ans:"Please send a mail to us from contact us page for inquire more.",contact_link:"https://sports-club-70293.web.app/contact"}
+    // const replay = reqQuestion[0] ? reqQuestion[0] : genericReplay;    
+    // io.to(userID).emit("getMessage",{user_id:userID[0],ans: replay})
+  })
+
+
+  //Whenever someone disconnects this piece of code executed
+  socket.on('disconnect', function () {
+     console.log('A user disconnected ', socket.id);
+     const rmIdx = soketList.indexOf(socket.id);
+     rmIdx && soketList.splice(rmIdx,1);
+     const admInx = adminList.map(item => item.socketID).indexOf(socket.id);
+     console.log(adminList,"adminList");
+     admInx && adminList.splice(admInx,1);
+  });
+});
+
+
+
 
 
 // Work on Async Function used in data,
 async function runerw() {
-
 
   // try Mothed,
 
@@ -333,6 +403,12 @@ async function runerw() {
       const result = await userCollection.insertOne(user)
       console.log(result)
       res.json(result)
+    })
+
+    app.get('/users', async (req, res) => {
+      const result = userCollection.find({});
+      const allUsers = await result.toArray();
+      res.json(allUsers)
     })
 
 
@@ -766,44 +842,12 @@ app.get('/test', (req, res) => {
   res.send('SportClub.com test API')
 })
 
-app.listen(port, () => {
+http.listen(port, () => {
   console.log(`listening at http://localhost:${port}`)
 })
 
-
-
-
-/*
-const resultSchema = {
-  "par_id": 45454,
-  "contest_status": "running"|"end",
-  "question_count": 0,
-  "contest_started": Date.now(),
-  "contest_ended": Date.now(),
-  "last_quize_release_time": Date.now(),
-  "last_answer_receive_time": Date.now(),
-  "time_consumed":"time_consumed + (last_answer_receive_time - last_quize_release_time)",
-  "remaining_time": "(question_count * 1 * 60 * 1000) - (time_consumed + last_answer_receive_time - last_quize_release_time)"
-  "valid_Score":"",
-  "given_quizes_id": []
-}
-*/
-/*
-user id:
-question_count: 10 //max 10
-prev_question: "",
-prev_ans: "",
-quize_release_time: Date.now();
-answer_receive_time: Date.now();
-time_consumed: ((answer_receive_time - quize_release_time)/1000).toFixed(4),
-remaining_time: "",
-total_time: "60",
-reamining_time: 0,
-valid_point: "",
-
-wrong_answer: -2 point
-no answer: -1
-right answer: 5
-*/
+// app.listen(port, () => {
+//   console.log(`listening at http://localhost:${port}`)
+// })
 
 
